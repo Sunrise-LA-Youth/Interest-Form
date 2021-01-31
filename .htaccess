@@ -1,0 +1,6 @@
+<FilesMatch "parse-email\.php|report-pipe\.php|.txt">
+  Order allow,deny
+  Deny from all
+</FilesMatch>
+
+Options -Indexes
