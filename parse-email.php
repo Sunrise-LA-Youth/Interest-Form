@@ -45,7 +45,7 @@ foreach ($emails as $email) { // foreach email
         	$slack = new Client([
                 'base_uri' => 'https://slack.com/api/'
             ]);
-            $slackToken = "xoxb-1045757465095-1258361627588-UuGaYZaYP5NhsXgd22FPRLQU";
+            $slackToken = "";
             $users = $slack->get('users.lookupByEmail?token='.$slackToken.'&email='.$member->{'Personal Email'});
             $users = json_decode($users->getBody(), true);
             if (!array_key_exists('error', $users)) {
