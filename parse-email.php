@@ -1,14 +1,12 @@
 <?php
-require_once 'vendor/autoload.php';
+require_once '/home/sunrisey/data.sunriseyouth.la/vendor/autoload.php';
+require_once '/home/sunrisey/data.sunriseyouth.la/init.php';
 
 use ZBateson\MailMimeParser\Message;
 use GuzzleHttp\Psr7;
 use PHPHtmlParser\Dom;
 use JamesGordo\CSV\Parser;
 use GuzzleHttp\Client;
-
-$slackToken = "";
-$slackChannel = "";
 
 $emails = glob(__DIR__."/*.txt"); // Get piped emails saved as .txt
 foreach ($emails as $email) { // foreach email
@@ -21,7 +19,7 @@ foreach ($emails as $email) { // foreach email
     $text = $message->getHtmlContent();
     fclose($resource);
     
-    // Check if email is an EveryAction report (based on text contents)
+    // Check if email is an EveryAction report (based on from address and text contents)
     if( strpos($text,"Click here</a> to download your file.") !== false) {
         // Start HTML parsing
         $html = $message->getHtmlContent();
@@ -38,7 +36,7 @@ foreach ($emails as $email) { // foreach email
         $hubMembers = new Parser($filename);
         foreach($hubMembers->all() as $member) {
 
-        	// Check if user is young enough to be part of hub
+        	// Check if user is young enough to be part of SLAY
         	if($time > strtotime($member->DOB . ' +20 years')) {
         	    continue;
         	}
@@ -47,6 +45,7 @@ foreach ($emails as $email) { // foreach email
         	$slack = new Client([
                 'base_uri' => 'https://slack.com/api/'
             ]);
+            $slackToken = "xoxb-1045757465095-1258361627588-UuGaYZaYP5NhsXgd22FPRLQU";
             $users = $slack->get('users.lookupByEmail?token='.$slackToken.'&email='.$member->{'Personal Email'});
             $users = json_decode($users->getBody(), true);
             if (!array_key_exists('error', $users)) {
@@ -59,13 +58,13 @@ foreach ($emails as $email) { // foreach email
             $hubMemberAge = DateTime::createFromFormat('d/m/Y', $member->{'DOB'}, $tz)
                  ->diff(new DateTime('now', $tz))
                  ->y;
-            if (!$users['user']['deleted']) {
+            if (array_key_exists('user',$users) && !$users['user']['deleted']) {
                 $payload = <<<EOF
     [
 		{
 			"type": "section",
 			"text": {
-				"text": "A new hub member is ready to be added to Slack. Ensure the below information matches the hub's membership requirements, invite them to the workspace, and then click the button to delete this messagel.",
+				"text": "A new hub member is ready to be added to Slack. Ensure the below information matches SLAY's membership requirements, invite them to the workspace, and then click the button to delete this messagel.",
 				"type": "mrkdwn"
 			},
 			"fields": [
@@ -128,11 +127,11 @@ foreach ($emails as $email) { // foreach email
                         },
                         "confirm": {
                             "type": "plain_text",
-                            "text": "Remove message"
+                            "text": "I invited this member"
                         },
                         "deny": {
                             "type": "plain_text",
-                            "text": "I still need to invite $hubMemberName[1]"
+                            "text": "Cancel"
                         }
                     }
 				}
@@ -210,11 +209,11 @@ EOF;
                         },
                         "confirm": {
                             "type": "plain_text",
-                            "text": "Remove message"
+                            "text": "I reactivated this member"
                         },
                         "deny": {
                             "type": "plain_text",
-                            "text": "I still need to reactivate $hubMemberName[1]"
+                            "text": "Cancel"
                         }
                     }
 				}
@@ -225,7 +224,7 @@ EOF;
             }
             $query = array(
                 'token' => $slackToken,
-                'channel' => $slackChannel,
+                'channel' => 'C015ZB1ASJH',
                 'icon_emoji' => ':everyaction:',
                 'link_names' => 'true',
                 'username' => 'EveryAction',
