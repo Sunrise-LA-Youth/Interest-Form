@@ -1,9 +1,10 @@
 <?php
-require_once('vendor/autoload.php');
-
-$slackToken = "";
+require_once('../../vendor/autoload.php');
+require_once('../../init.php');
 
 use GuzzleHttp\Client;
+
+$slackToken = "";
 
 $json = json_decode($_POST['payload'],true);
 $responseUrl = $json['response_url'];
@@ -60,10 +61,40 @@ if ($userInfo['user']['deleted']) {
     $response = json_decode($response->getBody(), true);
     exit();
 }
-$userId = $userInfo['user']['id'];
-$userName = $userInfo['user']['real_name'];
+
+// Remove new hub member activist code
+$everyAction = new Client([
+    'base_uri' => 'https://api.securevan.com',
+    'timeout'  => 2.0,
+]);
+$data = new stdClass();
+
+$emailInput = new stdClass();
+$emailInput->email = $email;
+$data->emails[] = $emailInput;
+$findEA = $everyAction->request('POST', '/v4/people/find', [
+    'json' => $data,
+    'auth' => [$everyaction_username, $everyaction_password],
+]);
+$findEA = json_decode($findEA->getBody(), true);
+$vanID = $findEA['vanId'];
+
+$data = new stdClass();
+$responseEA = new stdClass();
+$responseEA->activistCodeId = '4838396';
+$responseEA->action = 'Remove';
+$responseEA->type = 'ActivistCode';
+$data->responses[] = $responseEA;
+
+$postEA = $everyAction->request('POST', '/v4/people/'.$vanID.'/canvassResponses', [
+    'json' => $data,
+    'auth' => [$everyaction_username, $everyaction_password],
+]);
+$postEA = json_decode($postEA->getBody(), true);
 
 // Return success message to Slack
+$userId = $userInfo['user']['id'];
+$userName = $userInfo['user']['real_name'];
 $response = $slackHook->post($responseUrl,
     ['body' => json_encode(
         [
