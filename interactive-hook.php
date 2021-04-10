@@ -81,7 +81,7 @@ $vanID = $findEA['vanId'];
 
 $data = new stdClass();
 $responseEA = new stdClass();
-$responseEA->activistCodeId = '4838396';
+$responseEA->activistCodeId = '';
 $responseEA->action = 'Remove';
 $responseEA->type = 'ActivistCode';
 $data->responses[] = $responseEA;
